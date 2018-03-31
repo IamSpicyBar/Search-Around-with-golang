@@ -9,8 +9,7 @@ import (
 	"strconv"
 	"reflect"
 	"github.com/pborman/uuid"
-	//"strings"
-
+	"strings"
 )
 
 
@@ -35,7 +34,6 @@ const (
 	//BT_INSTANCE = "around-post"
 	// Needs to update this URL if you deploy it to cloud.
 	ES_URL = "http://35.184.14.163:9200"
-	//FILTER_KEYWORD = "spam"
 )
 
 
@@ -122,6 +120,18 @@ func saveToES(p *Post, id string) {
 	fmt.Printf("Post is saved to Index: %s\n", p.Message)
 }
 
+func containsFilteredWords(s *string) bool {
+	filteredWords := []string{
+		"fuck",
+		"shit",
+	}
+	for _, word := range filteredWords {
+		if strings.Contains(*s, word) {
+			return true
+		}
+	}
+	return false
+}
 
 
 func handlerSearch(w http.ResponseWriter, r *http.Request) {
@@ -174,11 +184,9 @@ func handlerSearch(w http.ResponseWriter, r *http.Request) {
 	for _, item := range searchResult.Each(reflect.TypeOf(typ)) { // instance of
 		p := item.(Post) // p = (Post) item
 		fmt.Printf("Post by %s: %s at lat %v and lon %v\n", p.User, p.Message, p.Location.Lat, p.Location.Lon)
-		// TODO(student homework): Perform filtering based on keywords such as web spam etc.
-		//if !strings.constains(p.Message, FILTER_KEYWORD){
-		//	ps = append(ps, p)
-		//}
-		ps = append(ps, p)
+		if !containsFilteredWords(&p.Message) {
+			ps = append(ps, p)
+		}
 
 	}
 	js, err := json.Marshal(ps)
